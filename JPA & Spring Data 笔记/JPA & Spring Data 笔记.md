@@ -570,13 +570,278 @@ public class Order {
 
 
 
+映射关系，没有学习完
 
 
 
+## 6.JPQL语言
+
+Java Persistence Query Language 的简称。它是中间查询语言，最终被编译成根据不同的数据库生成SQL语句，从而屏蔽不同数据的差异。
+
+根据EntityManager的Query接口（createQuery、createNamedQuery及createNativeQuery)方法获取查询对象，进而可调用Query接口的相关方法来执行查询操作。
 
 
 
+![](images/搜狗截图20181006203723.png)
 
+
+
+![](images/搜狗截图20181006204047.png)
+
+![](images/搜狗截图20181006204339.png)
+
+![](images/搜狗截图20181006204907.png)
+
+使用查询的二级缓存：1.要先配置启用二级缓存，再到查询Query时，设置启用
+
+![](images/搜狗截图20181006205221.png)
+
+![](images/搜狗截图20181006205138.png)
+
+Group by
+
+![](images/搜狗截图20181006205538.png)
+
+![](images/搜狗截图20181006205658.png)
+
+![](images/搜狗截图20181006210102.png)
+
+子查询
+
+![](images/搜狗截图20181006210137.png)
+
+![](images/搜狗截图20181006210346.png)
+
+使用JPQL函数
+
+![](images/搜狗截图20181006210428.png)
+
+![](images/搜狗截图20181006210500.png)
+
+![](images/搜狗截图20181006210717.png)
+
+## 7.整合Spring
+
+![](images/搜狗截图20181006210829.png)
+
+
+
+示例：
+
+配置db.properties
+
+```java
+jdbc.user=root
+jdbc.password=1230
+jdbc.driverClass=com.mysql.jdbc.Driver
+jdbc.jdbcUrl=jdbc:mysql:///jpa        # /// 表示mysql的默认连接，数据库是jpa
+```
+
+
+
+配置applicationContext.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
+
+	<!-- 配置自动扫描的包 -->
+	<context:component-scan base-package="com.atguigu.jpa"></context:component-scan>
+
+	<!-- 配置 C3P0 数据源 -->
+	<context:property-placeholder location="classpath:db.properties"/>
+
+	<bean id="dataSource"
+		class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="user" value="${jdbc.user}"></property>
+		<property name="password" value="${jdbc.password}"></property>
+		<property name="driverClass" value="${jdbc.driverClass}"></property>
+		<property name="jdbcUrl" value="${jdbc.jdbcUrl}"></property>	
+		
+		<!-- 配置其他属性 -->
+	</bean>
+	
+	<!-- 配置 EntityManagerFactory -->
+	<bean id="entityManagerFactory"
+		class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<property name="dataSource" ref="dataSource"></property>
+		<!-- 配置 JPA 提供商的适配器. 可以通过内部 bean 的方式来配置 -->
+		<property name="jpaVendorAdapter">
+			<bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter"></bean>
+		</property>	
+		<!-- 配置实体类所在的包 -->
+		<property name="packagesToScan" value="com.atguigu.jpa.spring.entities"></property>
+		<!-- 配置 JPA 的基本属性. 例如 JPA 实现产品的属性 -->
+		<property name="jpaProperties">
+			<props>
+				<prop key="hibernate.show_sql">true</prop>
+				<prop key="hibernate.format_sql">true</prop>
+				<prop key="hibernate.hbm2ddl.auto">update</prop>
+			</props>
+		</property>
+	</bean>
+	
+	<!-- 配置 JPA 使用的事务管理器 -->
+	<bean id="transactionManager"
+		class="org.springframework.orm.jpa.JpaTransactionManager">
+		<property name="entityManagerFactory" ref="entityManagerFactory"></property>	
+	</bean>
+	
+	<!-- 配置支持基于注解是事务配置 -->
+	<tx:annotation-driven transaction-manager="transactionManager"/>
+
+</beans>
+```
+
+
+
+建立entiry 实体
+
+```java
+@Table(name="JPA_PERSONS")
+@Entity
+public class Person {
+
+	private Integer id;
+	private String lastName;
+
+	private String email;
+	private int age;
+
+	@GeneratedValue
+	@Id
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	@Column(name="LAST_NAME")
+	public String getLastName() {
+		return lastName;
+	}
+
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public int getAge() {
+		return age;
+	}
+
+	public void setAge(int age) {
+		this.age = age;
+	}
+}
+
+```
+
+
+
+建立数据的Dao
+
+```java
+@Repository
+public class PersonDao {
+
+	//如何获取到和当前事务关联的 EntityManager 对象呢 ?
+	//通过 @PersistenceContext 注解来标记成员变量!
+	@PersistenceContext
+	private EntityManager entityManager;
+	
+	public void save(Person person){
+		entityManager.persist(person);
+	}
+	
+}
+```
+
+建立Service
+
+```java
+@Service
+public class PersonService {
+	
+	@Autowired
+	private PersonDao personDao;
+	
+	@Transactional
+	public void savePersons(Person p1, Person p2){
+		personDao.save(p1);
+		
+		int i = 10 / 0;
+		
+		personDao.save(p2);
+	}
+	
+}
+```
+
+测试
+
+```java
+package com.atguigu.jpa.spring;
+
+import java.sql.SQLException;
+
+import javax.sql.DataSource;
+
+import org.junit.Test;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import com.atguigu.jpa.service.PersonService;
+import com.atguigu.jpa.spring.entities.Person;
+
+public class JPATest {
+	
+	private ApplicationContext ctx = null;
+	private PersonService personService = null;
+	
+	{
+		ctx = new ClassPathXmlApplicationContext("applicationContext.xml");
+		personService = ctx.getBean(PersonService.class);
+	}
+	
+	@Test
+	public void testPersonService(){
+		Person p1 = new Person();
+		p1.setAge(11);
+		p1.setEmail("aa@163.com");
+		p1.setLastName("AA");
+		
+		Person p2 = new Person();
+		p2.setAge(12);
+		p2.setEmail("bb@163.com");
+		p2.setLastName("BB");
+		
+		System.out.println(personService.getClass().getName());
+		personService.savePersons(p1, p2);
+	}
+	
+	@Test
+	public void testDataSource() throws SQLException {
+		DataSource dataSource = ctx.getBean(DataSource.class);
+		System.out.println(dataSource.getConnection());
+	}
+}
+```
 
 
 
