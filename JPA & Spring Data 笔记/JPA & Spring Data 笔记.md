@@ -368,7 +368,7 @@ public class JPATest {
 
     @Test
     public void testFind() {
-        //entityManger.getReference 相当于Hibernate的load 方法，延迟加载
+        //entityManager.find 相当于 Hibernate的get方法，
         Customer customer = entityManager.find(Customer.class, 5);
         System.out.println("------------------");
         System.out.println(customer);
@@ -378,7 +378,7 @@ public class JPATest {
     //注意，这里用到了@Before 和 @After，表示在测试方法执行之前和之后，执行。用于公共的操作动作
     @Test
     public void testgetReference() {
-        //entityManager.find 相当于 Hibernate的get方法，
+        //entityManger.getReference 相当于Hibernate的load 方法，延迟加载
         //先返回的是一个代理，真正使用的时候，才向数据库发sql
         //如果在返回代理对象后，把EntityManager关闭了，就会报错，说no session 去执行代理操作
         Customer customer = entityManager.getReference(Customer.class, 5);
