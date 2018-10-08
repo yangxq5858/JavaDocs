@@ -516,21 +516,346 @@ public class C3P0DataSourceFactory extends UnpooledDataSourceFactory {
 
 ## 4.映射文件
 
+### 1）新增、删除、修改
+
+```java
+public interface EmployeeMapper {
+
+    Employee getEmployeeById(Integer id);
+    //Mybatis 会自动从数据库的结果返回int、Integer、Boolean、void
+    Integer insertEmp(Employee employee);
+
+    Boolean updateEmp(Employee employee);
+
+    Boolean delEmp(Integer id);
+
+}
+
+
+```
+
+```xml
+    <!--插入可以不指定参数类型-->
+    <insert id="insertEmp" parameterType="com.hx.mybatis.bean.Employee">
+        insert into tbl_employee(last_name,gender,email) values (#{lastName},#{gender},#{email})
+    </insert>
+    <update id="updateEmp">
+        update tbl_employee
+          set last_name = #{lastName},
+              gender = #{gender},
+              email = #{email}
+          where id = #{id}
+    </update>
+    <delete id="delEmp" >
+        delete from tbl_employee where id = #{id}
+    </delete>
+```
+
+```java
+ //测试插入
+    @Test
+    public void testInsert() throws IOException {
+        SqlSessionFactory sqlSessionFactory = getSqlSessionFactory();
+        //这里没有开启自动提交
+        SqlSession sqlSession = sqlSessionFactory.openSession();
+        try {
+            EmployeeMapper empMapper = sqlSession.getMapper(EmployeeMapper.class);
+            Employee employee = new Employee(null, "Tom", "0", "Tom@qq.com");
+            Integer count = empMapper.insertEmp(employee);
+            System.out.println(count);
+            //手工提交
+            sqlSession.commit();
+        }finally {
+            sqlSession.close();
+        }
+    }
+    //测试修改
+    @Test
+    public void testUpdate() throws IOException {
+        SqlSessionFactory sqlSessionFactory = getSqlSessionFactory();
+        //这里没有开启自动提交
+        SqlSession sqlSession = sqlSessionFactory.openSession();
+        try {
+            EmployeeMapper empMapper = sqlSession.getMapper(EmployeeMapper.class);
+            Employee employee = new Employee(1, "Tom", "0", "Tom@qq.com");
+            Boolean flag = empMapper.updateEmp(employee);
+            System.out.println(flag);
+            //手工提交
+            sqlSession.commit();
+        }finally {
+            sqlSession.close();
+        }
+    }
+   //测试删除
+    @Test
+    public void testDelete() throws IOException {
+        SqlSessionFactory sqlSessionFactory = getSqlSessionFactory();
+        //这里开启了自动提交
+        SqlSession sqlSession = sqlSessionFactory.openSession(true);
+        try {
+            EmployeeMapper empMapper = sqlSession.getMapper(EmployeeMapper.class);
+            Boolean flag = empMapper.delEmp(3);
+            System.out.println(flag);
+            //手工提交
+//            sqlSession.commit();
+        }finally {
+            sqlSession.close();
+        }
+    }
+```
+
+### 2）获取自增长id的返回值：
+
+   mybatis也是和jdbc一样，采用的是stament.getGenreatedKeys() 来获取的。需要打开useGeneratedKeys="true"，并设置返回的主键，赋值给bean的哪个属性。
+
+下面这个是mysql的方式
+
+```xml
+ <insert id="insertEmp" parameterType="com.hx.mybatis.bean.Employee" useGeneratedKeys="true" keyProperty="id">
+        insert into tbl_employee(last_name,gender,email) values (#{lastName},#{gender},#{email})
+    </insert>
+```
+
+oracle的方式
+
+```xml
+<!-- 
+	获取非自增主键的值：
+		Oracle不支持自增；Oracle使用序列来模拟自增；
+		每次插入的数据的主键是从序列中拿到的值；如何获取到这个值；
+	 -->
+	<insert id="addEmp" databaseId="oracle">
+		<!-- 
+		keyProperty:查出的主键值封装给javaBean的哪个属性
+		order="BEFORE":当前sql在插入sql之前运行
+			   AFTER：当前sql在插入sql之后运行
+		resultType:查出的数据的返回值类型
+		
+		BEFORE运行顺序：
+			先运行selectKey查询id的sql；查出id值封装给javaBean的id属性
+			在运行插入的sql；就可以取出id属性对应的值
+		AFTER运行顺序：
+			先运行插入的sql（从序列中取出新值作为id）；
+			再运行selectKey查询id的sql；
+		 -->
+		<selectKey keyProperty="id" order="BEFORE" resultType="Integer">
+			<!-- 编写查询主键的sql语句 -->
+			<!-- BEFORE-->
+			select EMPLOYEES_SEQ.nextval from dual 
+			<!-- AFTER：
+			 select EMPLOYEES_SEQ.currval from dual -->
+		</selectKey>
+		
+		<!-- 插入时的主键是从序列中拿到的 -->
+		<!-- BEFORE:-->
+		insert into employees(EMPLOYEE_ID,LAST_NAME,EMAIL) 
+		values(#{id},#{lastName},#{email<!-- ,jdbcType=NULL -->}) 
+		<!-- AFTER：
+		insert into employees(EMPLOYEE_ID,LAST_NAME,EMAIL) 
+		values(employees_seq.nextval,#{lastName},#{email}) -->
+	</insert>
+```
+
+推荐使用before的方式，先把nextval 取出来，再插入。
+
+### 3）参数的传递方式
+
+#### **单个参数**：
+
+mybatis不会做特殊处理，
+
+	#{参数名/任意名}：取出参数值。
+​	
+
+#### **多个参数**：
+
+##### 1.@Param
+
+mybatis会做特殊处理。
+
+	多个参数会被封装成 一个map，
+		key：param1...paramN,或者参数的索引也可以
+		value：传入的参数值
+	#{}就是从map中获取指定的key的值；
+	
+	异常：
+	org.apache.ibatis.binding.BindingException: 
+	Parameter 'id' not found. 
+	Available parameters are [1, 0, param1, param2]
+	操作：
+		方法：public Employee getEmpByIdAndLastName(Integer id,String lastName);
+		取值：#{id},#{lastName}
+
+**【命名参数】：接口的方法中明确指定封装参数时map的key；@Param("id")**
+
+```java
+//多参数
+Employee getEmployeeByIdAndLastName(@Param("id") Integer id,@Param("lastName") String lastName);
+
+```
+
+```xml
+    <select id="getEmployeeByIdAndLastName" resultType="com.hx.mybatis.bean.Employee">
+       select * from tbl_Employee where id = #{id} and last_name = #{lastName}
+    </select>
+```
+
+##### 2.POJO
+
+如果多个参数正好是我们业务逻辑的数据模型，我们就可以直接传入pojo；
+
+	#{属性名}：取出传入的pojo的属性值	
+```java
+    //使用pojo的参数方式
+    Employee getEmployeeByPOJO(Employee employee);
+
+```
+
+```xml
+    <select id="getEmployeeByPOJO" resultType="com.hx.mybatis.bean.Employee">
+       select * from tbl_Employee where id = #{id} and last_name = #{lastName}
+    </select>
+```
+
+```java
+    @Test
+    public void testPojoParamQuery() throws IOException {
+        SqlSessionFactory sqlSessionFactory = getSqlSessionFactory();
+        SqlSession sqlSession = sqlSessionFactory.openSession();
+        try {
+            EmployeeMapper mapper = sqlSession.getMapper(EmployeeMapper.class);
+            Employee employee = new Employee();
+            employee.setId(4);
+            employee.setLastName("Tom");
+            Employee employee2 = mapper.getEmployeeByPOJO(employee);
+            System.out.println(employee2);
+        }finally {
+            sqlSession.close();
+
+        }
+    }
+```
 
 
 
+##### 3.Map：
+
+如果多个参数不是业务模型中的数据，没有对应的pojo，不经常使用，为了方便，我们也可以传入map
+
+	#{key}：取出map中对应的值
+![](images/搜狗截图20181008213140.png)
 
 
 
+##### 4.DTO：
+
+如果多个参数不是业务模型中的数据，但是经常要使用，**推荐**来编写一个**DTO**（Transfer Object）数据传输对象
+Page{
+
+	int index;
+	int size;
+}
+
+##### 5.总结
+
+========================思考================================	
+public Employee getEmp(@Param("id")Integer id,String lastName);
+	sqlmapper.xml配置文件中的参数取值：id==>#{id 或者 param1}   lastName==>#{param2}
+
+public Employee getEmp(Integer id,@Param("e")Employee emp);
+取值：id==>#{param1}    lastName===>#{param2.lastName 或者e.lastName}
+
+
+**特别注意**：如果是Collection（List、Set）类型或者是数组，也会特殊处理。也是把传入的list或者数组封装在map中。
+​     key：Collection（collection）,如果是List还可以使用这个key(list)
+​               数组(array)
+public Employee getEmpById(List<Integer> ids);
+取值：取出第一个id的值：   #{list[0]}
+
+========================结合源码，mybatis怎么处理参数==========================
+总结：参数多时会封装map，为了不混乱，我们可以使用@Param来指定封装时使用的key；
+{key}就可以取出map中的值；
+
+### 4）参数值的获取
+
+#### '#{}' 和 '${}' 的区别
+
+"#{}"：可以获取map中的值或者pojo对象属性的值；
+
+${}：可以获取map中的值或者pojo对象属性的值；
+
+
+select * from tbl_employee where id=${id} and last_name=#{lastName}
+Preparing: select * from tbl_employee where id=2 and last_name=?
+	区别：
+		#{}:是以预编译的形式，将参数设置到sql语句中；PreparedStatement；防止sql注入
+		${}:取出的值直接拼装在sql语句中；会有安全问题；
+		大多情况下，我们去参数的值都应该去使用#{}；
+		
+		原生jdbc不支持占位符的地方我们就可以使用${}进行取值
+		比如分表、排序。。。；按照年份分表拆分
+			select * from ${year}_salary where xxx;
+			select * from tbl_employee order by ${f_name} ${order}
+
+#### '#{}'更丰富的用法
+
+	规定参数的一些规则：
+	javaType、 jdbcType、 mode（存储过程）、 numericScale、
+	resultMap、 typeHandler、 jdbcTypeName、 expression（未来准备支持的功能,表达式）；
+	
+	jdbcType通常需要在某种特定的条件下被设置：
+		在我们数据为null的时候，有些数据库可能不能识别mybatis对null的默认处理。比如Oracle（报错）；
+		错误为：JdbcType OTHER：无效的类型；
+		因为mybatis对所有的null都映射的是原生Jdbc的OTHER类型，oracle不能正确处理;
+		
+		由于全局配置中：默认的jdbcTypeForNull=OTHER；oracle不支持；两种办法
+		1、#{email,jdbcType=NULL};
+		2、jdbcTypeForNull=NULL
+		    在全局配置中，设置为NULL
+			<setting name="jdbcTypeForNull" value="NULL"/>
 
 
 
+## 5.查询
 
+### 1）返回List<T>
 
+```xml
+    <!--List<Employee> getEmployeesByName(String lastName);  注意，这里的返回值类型还是实体类-->
+    <select id="getEmployeesByName" resultType="com.hx.mybatis.bean.Employee">
+       select * from tbl_Employee where id = #{id} and last_name like #{lastName}
+    </select>
 
+```
 
+### 2）返回Map<String,Object>
 
+```xml
+ 	<!-- public Map<String, Object> getEmpByIdReturnMap(Integer id);  -->
+ 	<select id="getEmpByIdReturnMap" resultType="map">
+ 		select * from tbl_employee where id=#{id}
+ 	</select>
+```
 
+### 3）返回Map<Integer,Employee> 
+
+```java
+//多条记录封装一个map：Map<Integer,Employee>:键是这条记录的主键，值是记录封装后的javaBean
+//@MapKey:告诉mybatis封装这个map的时候使用哪个属性作为map的key
+@MapKey("lastName")
+public Map<String, Employee> getEmpByLastNameLikeReturnMap(String lastName);
+```
+
+```xml
+<!--public Map<Integer, Employee> getEmpByLastNameLikeReturnMap(String lastName);  -->
+<select id="getEmpByLastNameLikeReturnMap" resultType="com.atguigu.mybatis.bean.Employee">
+  select * from tbl_employee where last_name like #{lastName}
+</select>
+```
+
+## 6.resultMap自定义结果集
+
+学习28集了。
 
 
 
