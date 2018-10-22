@@ -1031,6 +1031,30 @@ fetch(url, {
 
 
 
+## 1）map的用法
+
+```jsx
+ const users = result.items.map(item =>
+                     (
+                      {name:item.login,url:item.html_url,avatarUrl:item.avatar_url}
+                     )
+                                )
+ /*
+ {name:item.login,url:item.html_url,avatarUrl:item.avatar_url} :表示一个对象，但没有返回出去，加一个(xx对象) ，就返回了。
+ 
+ 
+ 也可以写另外一种方式：
+ */
+ const users = result.items.map(item =>
+                {
+                    return {name: item.login, url: item.html_url, avatarUrl: item.avatar_url}
+                }
+            )
+ //就是直接return出一个对象
+```
+
+
+
 
 
 
