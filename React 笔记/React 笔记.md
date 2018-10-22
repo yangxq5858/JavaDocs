@@ -1001,4 +1001,69 @@ fetch(url, {
 
 
 
-学习26节课了
+# 6.组件间通讯
+
+## 方式一: 通过props传递
+
+1)         共同的数据放在父组件上, 特有的数据放在自己组件内部(state)
+
+2)         通过props可以传递一般数据和函数数据, 只能一层一层传递
+
+3)         一般数据-->父组件传递数据给子组件-->子组件读取数据
+
+4)         函数数据-->子组件传递数据给父组件-->子组件调用函数
+
+**最大的问题，不能跨级传递，也不能在兄弟组件之间，直接传递**
+
+## 方式二: 使用消息订阅(subscribe)-发布(publish)机制
+
+1)         工具库: PubSubJS
+
+2)         下载: npm install pubsub-js --save
+
+3)         使用: 
+
+​           import PubSub from 'pubsub-js' //引入
+
+​           PubSub.subscribe('delete', function(data){ }); //订阅
+
+​           PubSub.publish('delete', data) //发布消息
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
