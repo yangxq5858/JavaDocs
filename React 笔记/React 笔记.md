@@ -1334,9 +1334,210 @@ export default class MyNavLink extends Component {
 
 ## 4）嵌套路由
 
+### 1.第二层路由，和第一层的路由写法是一样的:
+
+1. **写NavLink ,导航路由 <MyNavLike** 
+2. **写路由，指向组件 <Switch> <Route>,注意，写路由时，要配合Switch**
+
+```jsx
+import React, { Component } from 'react';
+import {Switch,Route,Redirect} from 'react-router-dom'
+import MyNavLike from '../components/mynavlink'
+import News from './news'
+import Message from './message'
+
+
+export default class Home extends Component {
+    render() {
+        return (
+            <div>
+                <h2>Home Route Component</h2>
+                <div>
+                    <ul className='nav nav-tabs'>
+                        <li>
+                            <MyNavLike to='/home/news'>News</MyNavLike>
+                        </li>
+                        <li>
+                            <MyNavLike to='/home/message'>Message</MyNavLike>
+                        </li>
+                    </ul>
+                    <div>
+                        <Switch>
+                            <Route path='/home/news' component= {News} />
+                            <Route path='/home/message' component= {Message} />
+                            <Redirect to='/home/news' />
+
+                        </Switch>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+}
+
+```
+
+### 2.超链接路由
+
+第三层路由跳转，我们采用超链接的方式
+
+改造message组件中的Item里的链接，来打开第三层路由.
+
+```jsx
+import React, {Component} from 'react'
+import {Route} from 'react-router-dom'
+
+import MessageDetail from './message-detail'
+
+export default class Message extends Component {
+    state = {
+        messageList: []
+    }
+
+    componentDidMount() {
+        // 模拟发送ajax请求
+        setTimeout(() => {
+            const messages = [
+                {id: 1, title: 'msg001'},
+                {id: 2, title: 'msg002'},
+                {id: 3, title: 'msg003'},
+                {id: 4, title: 'msg004'}
+            ]
+            //更新状态数据
+            this.setState({messageList: messages})
+
+        }, 1000)
+
+    }
+
+
+    render() {
+        const {messageList} = this.state
+        return (
+            <div>
+
+                <ul>
+                    {
+                        messageList.map((message, idx) => {
+                            return (
+                                <li key={idx}>
+                                    {/*这里用的是es6的格式化语法*/}
+                                    <a href={`/home/message/messageDetail/${message.id}`}>{message.title}</a>
+                                </li>
+                            )
+                        })
+                    }
+                </ul>
+                <Route path='/home/message/messageDetail/:id' component={MessageDetail} />
+            </div>
+        );
+    }
+}
+
+```
 
 
 
+messageDetial，我们采用function的方式来处理。
+
+```jsx
+import React from 'react'
+
+// 模拟从后台取得的数据
+const allMessages = [
+    {id:1,title:'msg001',content:'你好啊'},
+    {id:2,title:'msg002',content:'我很好'},
+    {id:3,title:'msg003',content:'是吗？'},
+    {id:4,title:'msg004',content:'当然'}
+]
+
+export default function MessageDetail(props){
+    // debugger //打开调试
+    const id = props.match.params.id;
+    // 返回第一个匹配到的元素
+    const message = allMessages.find((m)=>m.id === id * 1)
+    console.log(message);
+    return(
+        <ul>
+            <li>ID:{message.id}</li>
+            <li>Title:{message.title}</li>
+            <li>Content:{message.content}</li>
+        </ul>
+    )
+}
+```
+
+### 3.启用路由后，如何给组件传递参数
+
+注意，这里，我们没有使用组件标签了，以前传递是通过props直接传递的，现在不行了，只能通过路由导航和路由来设置。
+
+上面例子中有一个：
+
+```jsx
+<a href={`/home/message/messageDetail/${message.id}`}>{message.title}</a>
+<Route path='/home/message/messageDetail/:id' component={MessageDetail} />
+
+//组件获取值
+export default function MessageDetail(props){
+    // debugger //打开调试
+    const id = props.match.params.id;
+}
+```
+
+Route中要使用占位符，这个占位符，就会出现在props.match.params中
+
+### 4.路由链接和非路由链接的区别
+
+路由请求：是不会发送请求的，不走服务器端
+
+非路由请求：超链接的方式：要走服务器端，我们可以把它替换为Link标签或NavLink标签
+
+### 5.按钮来执行路由
+
+```jsx
+//1. 通过在onClick中写一个匿名函数，在函数内部，调用外部的方法，并把id传入
+// 注意，不能直接写onClick={this.showDetail(message.id)}，因为onClick中的第一个参数，是event，是得不到message.id的
+
+<button onClick={() =>this.showDetail(message.id)}>push查看</button>
+
+//2. 通过props.history 来push一个值，相当于压入一个请求，执行了一个路由。
+ showDetail = (id) =>{
+        this.props.history.push(`/home/message/messageDetail/${id}`);
+ }
+ //3. 还是要声明一个路由的跳转 到具体哪个组件
+ <Route path='/home/message/messageDetail/:id' component={MessageDetail} />
+```
+
+History中有2个重要的方法（push 和 replace方法），replace方法时压入堆栈时，不增加路由，而是直接修改前一个路由。push是增加路由。
+
+
+
+### 6.通过按钮执行回退，前进
+
+```jsx
+forward = ()=>{
+    this.props.history.goForward()
+}
+
+back = () =>{
+    this.props.history.goBack()
+}
+
+ <p>
+    <button onClick={this.forward}>前进</button>
+    <button onClick={this.back}>回退</button>
+ </p>
+```
+
+### 7.页面整体跳转
+
+上面讲的都是页面内，局部更新，SPA
+
+要进行页面的整体跳转，2个方式：
+
+   1 <a href>标签
+
+2. window.location='http'的方式
 
 
 
