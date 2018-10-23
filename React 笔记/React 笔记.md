@@ -1055,22 +1055,284 @@ fetch(url, {
 
 
 
+# 7.React-router
+
+## 1）相关理解
+
+### 1.理解router
+
+1) react的一个插件库
+2)专门用来实现一个SPA应用
+3)基于react的项目基本都会用到此库
+
+### 2.认识SPA
+
+1)  单页Web应用（single page web application，SPA）
+
+2)  整个应用只有一个完整的页面
+
+3)  点击页面中的链接不会刷新页面, 本身也不会向服务器发请求
+
+4)  当点击路由链接时, 只会做页面的局部更新
+
+5)  数据都需要通过ajax请求获取, 并在前端异步展现
+
+### 3.路由的理解
+
+#### 1)什么是路由?
+
+a. 一个路由就是一个映射关系(key:value)
+
+b. key为路由路径, value可能是function（request,response）或者一个组件component
+
+#### 2)路由分类
+
+a. 后台路由: node服务器端路由, value是function, 用来处理客户端提交的请求并返回一个响应数据
+
+b. 前台路由: 浏览器端路由, value是component, 当请求的是路由path时, 浏览器端前没有发送http请求, 但界面会更新显示对应的组件 
+
+#### 3) 后台路由
+
+a.注册路由: router.get(path, function(req, res))
+
+b.当node接收到一个请求时, 根据请求路径找到匹配的路由, 调用路由中的函数来处理请求, 返回响应数据
+
+#### 4) 前端路由
+
+a. 注册路由: <Route path="/about" component={About}>
+
+b. 当浏览器的hash变为#about时, 当前路由组件就会变为About组件
+
+#### 5）前端路由的实现
+
+1)  history库
+
+a.  网址: <https://github.com/ReactTraining/history>
+
+b.  管理浏览器会话历史(history)的工具库
+
+c.   包装的是原生BOM中window.history和window.location.hash
+
+2)  history API
+
+a.  History.createBrowserHistory(): 得到封装window.history的管理对象
+
+b.  History.createHashHistory(): 得到封装window.location.hash的管理对象
+
+c.   history.push(): 添加一个新的历史记录
+
+d.  history.replace(): 用一个新的历史记录替换当前的记录
+
+e.  history.goBack(): 回退到上一个历史记录
+
+f.   history.goForword(): 前进到下一个历史记录
+
+g.  history.listen(function(location){}): 监视历史记录的变化
+
+## 2）相关api
+
+### 1.组件
+
+1)  <BrowserRouter>
+
+浏览器 路由器组件
+
+2)  <HashRouter>
+
+带#号的（锚点） 路由器组件
+
+3)  <Route>
+
+路由
+
+4)  <Redirect>
+
+重定向
+
+5)  <Link>
+
+路由链接
+
+6)  <NavLink>
+
+导航路由链接
+
+7)  <Switch>
+
+切换 它可以包含多个Route
+
+### 2.对象及其他
+
+1)  history对象（push，replace方法）
+
+2)  match对象
+
+3)  withRouter函数
+
+## 3）基本使用
+
+### 1.示例
+
+```xml
+1. 安装react-router
+//react-router 有3个版本（web，native，anywhere），web版本是-dom
+npm install --save react-router-dom
+
+2. 引入bootStrap.css
+```
 
 
 
+index.js
+
+```jsx
+import React from 'react'
+import ReactDOM from 'react-dom'
+import {BrowserRouter} from 'react-router-dom'
+
+import App from './components/app'
+
+import './index.css'
+
+ReactDOM.render(
+    (
+        <BrowserRouter>
+            <App/>
+        </BrowserRouter>
+    ),
+    document.getElementById('root'))
+```
+
+app.jsx
+
+```jsx
+import React, {Component} from 'react'
+
+import {NavLink, Route, Switch, Redirect} from 'react-router-dom'
+import About from '../views/about'
+import Home from '../views/home'
+
+
+export default class App extends Component {
+
+    render() {
+        return (
+            <div>
+                <div className="row">
+                    <div className="col-xs-offset-2 col-xs-8">
+                        <div className="page-header">
+                            <h2>React Router Demo</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="row">
+                    <div className="col-xs-2 col-xs-offset-2">
+                        <div className="list-group">
+                            {/*导航路由链接*/}
+                            <NavLink className="list-group-item" to='/about'>About</NavLink>
+                            <NavLink className="list-group-item" to='/home'>Home</NavLink>
+                        </div>
+                    </div>
+                    <div className="col-xs-6">
+                        <div className="panel">
+                            <div className="panel-body">
+                                {/*可切换的路由组件*/}
+                                <Switch>
+                                    <Route path='/about' component={About}/>
+                                    <Route path='/home' component={Home}/>
+                                    {/*表示默认跳转到第一个about组件*/}
+                                    <Redirect to='/about'/>
+                                </Switch>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+}
+
+```
 
 
 
+在view文件夹下，建立2个组件（About和Home）
+
+```jsx
+import React, { Component } from 'react';
+
+export default class About extends Component {
+    render() {
+        return (
+            <div>
+                About Route Component
+            </div>
+        );
+    }
+}
+
+```
+
+```jsx
+import React, { Component } from 'react';
+
+export default class Home extends Component {
+    render() {
+        return (
+
+            <div>
+                Home Route Component
+            </div>
+        );
+    }
+}
+
+```
+
+### 2.修改默认的选中样式
+
+利用  NavLink的属性 activeClassName 来设置
+
+```jsx
+<NavLink className="list-group-item" activeClassName='activeClass' to='/about'>About</NavLink>
+
+<NavLink className="list-group-item" activeClassName='activeClass' to='/home'>Home</NavLink>
+```
 
 
 
+```css
+.activeClass{
+  color: red!important; //  !important 表示这个属性，不允许被其他样式覆盖
+}
+
+```
 
 
 
+缺点：是每个标签上都要去设置activeClassName，我们可以自定义组件，并实现类似于继承关系的作用。
+
+### 3. 实现MyNavLink 包装组件,类似继承效果
+
+```jsx
+import React, { Component } from 'react';
+import {NavLink} from 'react-router-dom'
+
+export default class MyNavLink extends Component {
+    render() {
+        return (
+            <NavLink  {...this.props}   activeClassName='activeClass' />
+        )
+    }
+}
+
+//{...this.props} 这个接包和压缩包，就可以将MyNavLink中的 所有属性都传递给NavLink 中
+```
 
 
 
-
+## 4）嵌套路由
 
 
 
