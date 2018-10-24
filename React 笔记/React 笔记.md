@@ -1541,6 +1541,353 @@ back = () =>{
 
 
 
+# 8.ant design - react
+
+1)PC官网: <https://ant.design/index-cn>
+2)移动官网: <https://mobile.ant.design/index-cn>
+3)Github: <https://github.com/ant-design/ant-design/>
+4)Github: <https://github.com/ant-design/ant-design-mobile/>
+
+
+
+## 1）搭建环境
+
+搭建antd的环境，就是安装一个 antd 的组件库即可
+
+npm install antd --save
+
+## 2）配置按需加载
+
+1.安装组件
+
+npm install babel-plugin-import --dev
+npm install react-app-rewired -dev
+
+2.修改package.json
+"scripts": {
+"start": "react-app-rewired start",
+"build": "react-app-rewired build",
+"test": "react-app-rewired test --env=jsdom"
+}
+3.在项目的根目录下，建立一个config-overrides.js文件
+
+```jsx
+const {injectBabelPlugin} = require('react-app-rewired');
+module.exports = function override(config, env) {
+  config = injectBabelPlugin(['import', {libraryName: 'antd-mobile', style: 'css'}], config);
+  return config;
+};
+```
+
+4.编写代码时，只加载需要的组件
+
+```jsx
+import React, { Component } from 'react';
+import {Button,message} from 'antd'
+
+export default class App extends Component {
+
+    handleClick = () =>{
+        message.success("成功了",2)
+    }
+
+    render() {
+        return (
+            <div>
+                <Button onClick={this.handleClick} type= 'primary'>点击我</Button>
+            </div>
+        );
+    }
+}
+```
+
+# 9.redux
+
+## 1）概述
+
+**官方文档：**
+
+中文文档: <http://www.redux.org.cn/>
+
+英文文档: https://redux.js.org/ 
+
+**React是什么**
+
+1)         redux是一个独立专门用于做状态管理的JS库(不是react插件库)
+
+2)         它可以用在react, angular, vue等项目中, 但基本与react配合使用
+
+3)         作用: 集中式管理react应用中多个组件共享的状态
+
+**什么时候，需要redux(项目中都会用)**
+
+1)总体原则: 能不用就不用, 如果不用比较吃力才考虑使用
+
+2) 某个组件的状态，需要共享
+
+3) 某个状态需要在任何地方都可以拿到
+
+4) 一个组件需要改变全局状态
+
+5) 一个组件需要改变另一个组件的状态
+
+核心处理流程图：
+
+![](images/搜狗截图20181024102522.png)
+
+
+
+
+
+## 2）API
+
+**Store对象：**
+
+redux库最核心的管理对象
+
+它内部维护着: state 和 reducer(需要按照格式重写方法，第一个参数是store，代表老的store，第二个参数是action对象，action对象2个属性【1，type 代表action的标题或主题，2，data 表示action中的数据】)
+
+**核心方法：**
+
+store = createStore(reducer): 创建包含指定reducer的store对象
+Store对象的核心方法：
+
+store.getState()：获取store值
+
+store.dispatch(action) 分配，发布一个消息（动作）
+
+store.subscribe(listener) 订阅消息
+
+## 3）基本使用 示例
+
+1.安装redux
+
+npm i redux --save
+
+2.编写reducer
+
+```jsx
+/**
+ *
+ * @param store 老的store值
+ * @param action 2个属性
+ *              type： 动作的主题，类似于消息主题
+ *              data:  动作的数据
+ */
+import {DECRMENT, INCRMENT} from "./reduce-types";
+
+//这里设置了store的默认值
+export function counter(store = 0,action) {
+
+    switch (action.type) {
+        case INCRMENT:
+            return store + action.data
+        case DECRMENT:
+            return store - action.data
+        default:
+            return store
+
+    }
+}
+```
+
+action的主题，单独抽取一个配置文件
+
+```jsx
+/*
+ * 这里是定义模块中所有的reducer的type
+ * 值不能重复
+ *
+ */
+
+/**
+ *
+ * @type {string}
+ */
+export const INCRMENT = 'incrment'
+export const DECRMENT = 'decrment'
+```
+
+3.得到Store
+
+```js
+import React from 'react'
+import ReactDOM from 'react-dom'
+
+import App from './components/app'
+//导入自己写的store
+import store from './redux/store'
+
+
+
+
+function render() {
+    ReactDOM.render(
+        (
+            <App store={store}/>
+        ),
+        document.getElementById('root'))
+}
+
+// 初始化组件
+render()
+
+// 但有消息时，需要重新渲染
+store.subscribe(()=>{
+    render()
+})
+```
+
+剥离创建store
+
+```js
+/**
+ * 创建redux的  store对象
+ */
+
+import {createStore} from 'redux'
+import {counter} from "./reducers";
+
+const store = createStore(counter)
+export default store
+```
+
+
+
+4.将组件中的action，统一管理
+
+```jsx
+import {INCREMENT,DECREMENT} from "./reduce-types";
+/*
+包含所有action的 creator
+ */
+export const incrementAction = (number)=>({type:INCREMENT,data:number})
+export const decrementAction = (number)=>({type:DECREMENT,data:number})
+
+
+```
+
+5. 改造组件
+
+```jsx
+import React, { Component } from 'react';
+
+//导入这个文件下暴露的所有模块
+import * as actions from "../redux/actions";
+
+export default class App extends Component {
+
+
+    incrment = () =>{
+        // 得到原来的number值
+        // const {number} = this.props.store
+
+        const val = this.selector.value * 1
+        //更新值
+        this.props.store.dispatch(actions.incrementAction(val))
+
+        // this.setState({number:number + val})
+
+    }
+
+
+    decrment = () =>{
+        // 得到原来的number值
+        // const {number} = this.props.store
+        const val = this.selector.value * 1
+        //更新值
+        this.props.store.dispatch(actions.decrementAction(val))
+        // this.setState({number:number - val})
+
+    }
+
+    asyncincrment = () => {
+        // 得到原来的number值
+
+        setTimeout(() => {
+
+            const val = this.selector.value * 1
+
+            //更新值
+            this.props.store.dispatch(actions.incrementAction(val))
+            // this.setState({number:number + val})
+
+        },1000);
+
+
+    }
+
+
+    render() {
+        const number = this.props.store.getState()
+
+        return (
+            <div>
+                <p>number:{number}</p>
+                <div>
+                    <select ref={x=>this.selector = x}>
+                        <option value='1'>1</option>
+                        <option value='2'>2</option>
+                        <option value='3'>3</option>
+                    </select>
+                    &nbsp;
+                    <button onClick={this.incrment}>+</button>
+                    <button onClick={this.decrment}>-</button>
+                    <button onClick={this.asyncincrment}>async add</button>
+                </div>
+            </div>
+        );
+    }
+}
+```
+
+
+
+**总结使用步骤：**
+
+1. 初始化store，利用createStore方法
+
+      创建store之前，要先自定义reducer方法（就是更新store的具体实现，固定参数）
+
+2. 将store的值 传给 组件的props
+
+3. 订阅store的消息处理回调（就是重新渲染组件）
+
+4. 在组件中，获取store的值显示
+
+5. 抽取组件中的action到actions中统一管理（这里只是一个**action对象数据的封装**）
+
+6. 在组件中，各种action执行时，调用store.dispatch(action)方法，发布消息
+
+
+
+# 10.react-redux插件
+
+react中使用到了redux后，组件代码中，有很多与redux代码进行耦合了，比如：
+
+```js
+this.props.store.dispatch(actions.incrementAction(val))
+//比如下面的2个都是用到了redux
+this.props.store
+store.dispatch
+```
+
+为了解耦，和简化redux的应用，引入了react-redux插件库
+
+
+
+41集
+
+
+
+
+
+
+
+
+
+
+
 
 
 
