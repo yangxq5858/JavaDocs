@@ -1874,21 +1874,375 @@ store.dispatch
 
 为了解耦，和简化redux的应用，引入了react-redux插件库
 
+## 组件划分
+
+### 1)        UI组件
+
+a.        只负责 UI 的呈现，不带有任何业务逻辑
+
+b.        通过props接收数据(一般数据和函数)
+
+c.         不使用任何 Redux 的 API
+
+d.        一般保存在components文件夹下
+
+### 2)        容器组件
+
+a.        负责管理数据和业务逻辑，不负责UI的呈现
+
+b.        使用 Redux 的 API
+
+c.         一般保存在containers文件夹下
+
+## 相关API
+
+1)        Provider
+
+让所有组件都可以得到state数据
+
+<Provider store={store}>
+​    <App />
+  </Provider>
+
+2)        connect()
+
+用于包装 UI 组件生成容器组件
+
+import { connect } from 'react-redux'
+  connect(
+​    mapStateToprops,
+​    mapDispatchToProps
+  )(Counter)
+
+3)        mapStateToprops()
+
+将外部的数据（即state对象）转换为UI组件的标签属性
+  const mapStateToprops = function (state)
+{
+   return {
+​     value: state
+   }
+  }****
+
+4)        mapDispatchToProps()
+
+将分发action的函数转换为UI组件的标签属性
+
+简洁语法可以直接指定为actions对象或包含多个action方法的对象
 
 
-41集
+
+## 示例
+
+### UI组件
+
+```jsx
+import React, { Component } from 'react';
+import PropTypes from 'prop-types'
+
+
+export default class Counter extends Component {
+
+    static propTypes = {
+        count: PropTypes.number.isRequired,
+        increment:PropTypes.func.isRequired,
+        decrement:PropTypes.func.isRequired
+    }
+
+    incrment = () =>{
+        // 得到原来的number值
+        // const {number} = this.props.store
+
+        const val = this.selector.value * 1
+        //更新值
+        // this.props.store.dispatch(actions.incrementAction(val))
+        // this.setState({number:number + val})
+        this.props.increment(val);
+
+    }
+
+
+    decrment = () =>{
+        // 得到原来的number值
+        // const {number} = this.props.store
+        const val = this.selector.value * 1
+        //更新值
+        // this.props.store.dispatch(actions.decrementAction(val))
+        // this.setState({number:number - val})
+        this.props.decrement(val);
+
+    }
+
+    asyncincrment = () => {
+        // 得到原来的number值
+
+        setTimeout(() => {
+
+            const val = this.selector.value * 1
+
+            //更新值
+            // this.props.store.dispatch(actions.incrementAction(val))
+            // this.setState({number:number + val})
+            this.props.increment(val);
+
+        },1000);
+
+
+    }
+
+
+    render() {
+        // const number = this.props.store.getState()
+        const {count} = this.props
+
+
+        return (
+            <div>
+                <p>number:{count}</p>
+                <div>
+                    <select ref={x=>this.selector = x}>
+                        <option value='1'>1</option>
+                        <option value='2'>2</option>
+                        <option value='3'>3</option>
+                    </select>
+                    &nbsp;
+                    <button onClick={this.incrment}>+</button>
+                    <button onClick={this.decrment}>-</button>
+                    <button onClick={this.asyncincrment}>async add</button>
+                </div>
+            </div>
+        );
+    }
+}
+
+
+```
+
+### 容器包装
+
+```jsx
+import React from 'react'
+import {connect} from 'react-redux'
+
+import {incrementAction,decrementAction} from '../redux/actions'
+import App from '../components/Counter'
+
+export default connect(
+    state => ({count:state}),
+    {
+        increment:incrementAction,decrement:decrementAction
+    }
+)(App)
+```
+
+### redux 4个标准文件
+
+action.js
+
+```js
+import {INCREMENT,DECREMENT} from "./reduce-types";
+/*
+包含所有action的 creator
+ */
+export const incrementAction = (number)=>({type:INCREMENT,data:number})
+export const decrementAction = (number)=>({type:DECREMENT,data:number})
+
+
+```
+
+reduce-types.js
+
+```js
+/*
+ * 这里是定义模块中所有的reducer的type的常量字符串
+ * 值不能重复
+ *
+ */
+
+/**
+ *
+ * @type {string}
+ */
+export const INCREMENT = 'increment'
+export const DECREMENT = 'decrement'
+```
+
+reducers.js
+
+```js
+/**
+ *
+ * @param store 老的store值
+ * @param action 2个属性
+ *              type： 动作的主题，类似于消息主题
+ *              data:  动作的数据
+ */
+import {INCREMENT, DECREMENT} from "./reduce-types";
+
+//计算器的 reducer（还原器）
+export function counter(store = 0,action) {
+
+    console.log(store)
+    switch (action.type) {
+        case INCREMENT:
+            return store + action.data
+        case DECREMENT:
+            return store - action.data
+        default:
+            return store
+
+    }
+}
+```
+
+store.js
+
+```js
+/**
+ * 创建redux的  store对象
+ */
+
+import {createStore} from 'redux'
+import {counter} from "./reducers";
+
+const store = createStore(counter)
+export default store
+```
+
+### index.js
+
+```js
+import React from 'react'
+import ReactDOM from 'react-dom'
+import {Provider} from 'react-redux'
+
+
+import App from './containers/app'
+import store from './redux/store'
+
+
+ReactDOM.render(
+    (
+        <Provider store={store}>
+            <App/>
+        </Provider>
+    ),
+    document.getElementById('root'))
+
+
+```
+
+# 11.redux-thunk(异步编程插件)
+
+redux: 默认只有同步方式处理
 
 
 
+## 使用步骤
+
+1.下载redux插件(异步中间件)
+
+npm install --save redux-thunk
 
 
 
+2.store.js 文件修改(返回store的组件)
+
+```js
+/**
+ * 创建redux的  store对象
+ */
+
+import {createStore,applyMiddleware} from 'redux'
+import {counter} from "./reducers";
+import thunk from 'redux-thunk'
+
+// const store = createStore(counter)
+const store = createStore(
+    counter,
+    applyMiddleware(thunk) // 应用上异步中间件
+)
+
+export default store
+```
+
+3.actions.js 文件修改 增加一个异步方法
+
+// 异步action creator(返回一个函数)
+export const incrementAsync = (number) => {
+
+  **return **dispatch => {
+
+​    setTimeout(() => {
+
+​      dispatch(*increment*(number))
+
+​    }, 1000)
+
+  }
+
+}
+
+4.在ui组件中增加一个propTypes，就可以直接调用这个方法了
 
 
 
+# 12.使用redux的调试工具
+
+1. 下载redux-devtools_2_15_1.crx  chrome的插件
+2. 在项目中安装依赖
+
+npm install --save-dev redux-devtools-extension
+
+3. store 的创建代码修改
+```js
+import { composeWithDevTools } from 'redux-devtools-extension'
+
+const store = createStore(
+  counter,
+  composeWithDevTools(applyMiddleware(thunk)) //用composeWithDevTools包装一次
+)
+
+
+```
 
 
 
+## 相关重要知识: 纯函数和高阶函数
+
+### 1. 纯函数
+
+1)        一类特别的函数: 只要是同样的输入，必定得到同样的输出
+
+2)  必须遵守以下一些约束  
+
+a.  不得改写参数
+
+b.      不能调用系统 I/O 的API
+
+c.       能调用Date.now()或者Math.random()等不纯的方法  
+
+3)        reducer函数必须是一个纯函数
+
+### 2. 高阶函数
+
+4)        理解: 一类特别的函数
+
+a.        情况1: 参数是函数
+
+b.        情况2: 返回是函数
+
+5)                 常见的高阶函数: 
+
+a.        定时器设置函数
+
+b.        数组的map()/filter()/reduce()/find()/bind()
+
+c.         react-redux中的connect函数
+
+6)                 作用: 
+
+a.        能实现更加动态, 更加可扩展的功能
 
 
 
