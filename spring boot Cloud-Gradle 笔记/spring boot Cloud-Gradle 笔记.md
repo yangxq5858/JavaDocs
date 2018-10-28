@@ -978,7 +978,7 @@ http://getbootstrap.com/docs/4.1/getting-started/introduction/ 是官方示例
 
 # 6.springCloud 
 
-1）单体架构的优劣势
+## 1）单体架构的优劣势
 
 ![](images/搜狗截图20181027203355.png)
 
@@ -1017,6 +1017,757 @@ DevOps（技术栈相关人都有）
 自动扩展（根据当前应用负荷，自动扩容）
 
 
+
+## 4）SpringCloud可以解决那些问题
+
+配置管理
+
+服务注册
+
+服务发现
+
+断路器
+
+智能路由
+
+负载均衡
+
+微代理
+
+服务间调用
+
+一次性令牌
+
+控制总线
+
+思维导图模板
+
+全局锁
+
+领导选举
+
+分布式会话
+
+集群状态
+
+分布式消息
+
+# 7.springCloud 章节
+
+## 1）环境配置
+
+![](images/搜狗截图20181028111731.png)
+
+![](images/搜狗截图20181028111950.png)
+
+![](images/搜狗截图20181028112113.png)
+
+## 2）子项介绍
+
+### Spring Cloud Config:
+
+配置中心，利用git来集中管理程序的配置
+
+### Spring Cloud Netflix
+
+Spring Cloud Netflix（视频开源的框架），Spring 在它基础上，进行了封装。集成了众多的开源软件，包括Eureka，Hystrix，Zuul，Archaius等
+
+### Spring Cloud Bus
+
+消息总线，利用分布式消息将服务和服务实例连接在一起，用于在一个集群中传播状态的变化，比如配置更改的事件。可与Spring Cloud Config 联合实现 热部署。
+
+### Spring Cloud for Cloud Foundry
+
+（VMware 推出的，国内使用少）Pass云平台
+
+### Spring Cloud Cluster
+
+基于 Zookeeper、Redis、Hazelcast、Consul 实现的领导选举和平民状态模式的抽象和实现
+
+### Spring Cloud Consul
+
+基于 Hashicorp Consul实现的服务发现和配置管理
+
+### Spring Cloud Security
+
+在Zuul代理中为 OAth2 REST 客户端和认证头转发提供负载均衡
+
+### Spring Cloud Sleuth
+
+适用于 Spring Cloud 应用程序的分布式跟踪，与Zipkin、HTrace 和基于日志（例如ELK）的跟踪相兼容，可以对日志进行收集。
+
+### Spring Cloud Data Flow
+
+一种针对现代运行时可组合的微服务应用程序的云本地编排服务。易于使用的DSL、拖放式GUI和REST API 一起简化了基于微服务的数据管道的整体编排
+
+### Spring Cloud Stream
+
+一个轻量级的事件驱动的微服务框架来快速构建可以连接到外部系统的应用程序。使用Apache Kafaka或RabbitMQ在Spring Boot应用程序之间发送和接收消息的简单声明模型。
+
+### Spring Cloud Stream App Starters
+
+基于Spring Boot为外部系统提供Spring的集成。
+
+### Spring Cloud Task App Starters
+
+Spring Cloud Task App Starters 是Spring Boot 应用程序，可能是任何进程，包括Spring Batch作业，并可以在数据处理有限的时间终止
+
+### Spring Cloud Connectors
+
+便于PaaS应用在各种平台上连接到后端，像数据库和消息服务
+
+### Spring Cloud Starters
+
+基于Spring Boot 的项目，用以简化Spring Cloud的依赖管理。该项目已经终止，并且在Angel.SR2后的版本和其他项目合并
+
+### Spring Cloud CLI
+
+Spring Boot CLI插件用于在Groovy中快速创建Spring Cloud组件应用程序。
+
+### Spring Cloud Contract
+
+是一个总体项目，其中包含帮助用户成功实施消费者驱动契约（Consumer Driven Contracts)的解决方案。
+
+### 扩展学习
+
+http://cloud.spring.io/spring-cloud-static/Finchley.M2/
+
+## 3）服务注册和发现
+
+集成Eureka的Server和Client端
+
+Eureka 特点：
+
+服务注册和发现机制
+
+和Spring Cloud无缝集成
+
+高可用
+
+开源
+
+### 1.集成Eureka Server端
+
+#### 1）修改gradle文件
+
+spring-cloud-starter-netflix-eureka-server
+
+```gradle
+// buildscript 代码块中脚本优先执行
+buildscript {
+
+    // ext 用于定义动态属性
+    ext {
+        springBootVersion = '2.0.2.RELEASE'
+    }
+
+    // 使用了Maven的中央仓库及Spring自己的仓库（也可以指定其他仓库）
+    repositories {
+        // mavenCentral()
+        maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
+        maven { url "https://repo.spring.io/snapshot" }
+        maven { url "https://repo.spring.io/milestone" }
+    }
+
+    // 依赖关系
+    dependencies {
+
+        // classpath 声明了在执行其余的脚本时，ClassLoader 可以使用这些依赖项
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+// 使用插件
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+// 指定了生成的编译文件的版本，默认是打成了 jar 包
+group = 'com.hxcoltd.spring.cloud'
+version = '1.0.0'
+
+// 指定编译 .java 文件的 JDK 版本
+sourceCompatibility = 1.8
+
+// 使用了Maven的中央仓库及Spring自己的仓库（也可以指定其他仓库）
+repositories {
+    //mavenCentral()
+    maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
+    maven { url "https://repo.spring.io/snapshot" }
+    maven { url "https://repo.spring.io/milestone" }
+}
+
+ext {
+    springCloudVersion = '2.0.2.RELEASE'
+}
+
+// 依赖关系
+dependencies {
+    compile("org.springframework.boot:spring-boot-starter-web:${springBootVersion}")
+    // Eureka Server
+    compile("org.springframework.cloud:spring-cloud-starter-netflix-eureka-server:${springCloudVersion}")
+
+    // 该依赖用于测试阶段
+    testCompile('org.springframework.boot:spring-boot-starter-test')
+}
+
+```
+
+#### 2）application.properties
+
+```properties
+server.port: 8761
+
+eureka.instance.hostname: localhost
+eureka.client.registerWithEureka: false
+eureka.client.fetchRegistry: false
+eureka.client.serviceUrl.defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+
+eureka.server.enable-self-preservation=false
+```
+
+#### 3）修改主程序入口
+
+```java
+@SpringBootApplication
+@EnableEurekaServer //设置为服务端
+public class WeatherApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(WeatherApplication.class, args);
+    }
+}
+```
+
+
+
+### 2.集成Eureka Client端
+
+1）修改gradle文件
+
+依赖：spring-cloud-starter-netflix-eureka-client
+
+```gradle
+//builscript 中脚本优先执行
+buildscript {
+    ext {
+        springBootVersion = '2.0.2.RELEASE'
+    }
+
+    repositories {
+        //mavenCentral()
+        maven {url "http://maven.aliyun.com/nexus/content/groups/public/"}
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.hx.springboot'
+version = '0.0.1-SNAPSHOT'
+//jdk 的版本
+sourceCompatibility = 1.8
+
+repositories {
+    //mavenCentral()
+    maven {url "http://maven.aliyun.com/nexus/content/groups/public/"}
+}
+
+
+ext {
+    springCloudVersion = '2.0.2.RELEASE'
+}
+
+dependencies {
+    
+	
+	compile("org.springframework.boot:spring-boot-starter-web:${springBootVersion}")
+    // Eureka client
+    compile("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:${springCloudVersion}")
+
+    //用于访问第三方的api接口
+    //compile('org.apache.httpcomponents:httpclient:4.5.3')
+
+	//集成redis
+	//compile('org.springframework.boot:spring-boot-starter-data-redis')
+
+    //集成quartz
+    //compile('org.springframework.boot:spring-boot-starter-quartz')
+
+    // 添加 Spring Boot Thymeleaf Starter 的依赖
+    //compile('org.springframework.boot:spring-boot-starter-thymeleaf')
+
+    //runtimeOnly('org.springframework.boot:spring-boot-devtools')
+    //testImplementation('org.springframework.boot:spring-boot-starter-test')
+	testCompile('org.springframework.boot:spring-boot-starter-test')
+	
+}
+
+```
+
+
+
+2）application.properties
+
+```properties
+spring.application.name: micro-weather-city-eureka
+eureka.client.serviceUrl.defaultZone: http://localhost:8761/eureka/
+```
+
+3) 主程序入口修改
+
+```java
+
+@SpringBootApplication
+@EnableDiscoveryClient
+public class WeatherApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(WeatherApplication.class, args);
+    }
+}
+```
+
+### 3.运行Eureka 各个客户端
+
+进入各个文件夹根目录：
+
+gradle build：生成jar文件
+
+java -jar xxx\build\libs\xxxxx.jar --server.port=8081  :运行，在idea中默认运行的端口为8081
+
+
+
+也可以在idea中 application.properties中增加一个配置 server.port=8088 ,来启动自定义端口
+
+```properties
+server.port=8083
+
+spring.application.name: micro-weather-data-eureka
+eureka.client.serviceUrl.defaultZone: http://localhost:8761/eureka/
+```
+
+## 4）服务消费
+
+### 1.客户端发现模式
+
+![](images/搜狗截图20181028145611.png)
+**负载均衡在客户端**
+
+### 2.服务端发现模式
+
+![](images/搜狗截图20181028145814.png)
+
+**负载均衡在服务端**
+
+### 3.常见的微服务的消费者
+
+#### 1）Apache HttpClient
+
+![](images/搜狗截图20181028150248.png)
+
+![](images/搜狗截图20181028150348.png)
+
+![](images/搜狗截图20181028150436.png)
+
+#### 2）Ribbon 
+
+Spring  Cloud 提供的基于客户端负载均衡的工具
+
+![](images/搜狗截图20181028150706.png)
+
+![](images/搜狗截图20181028150745.png)
+
+![](images/搜狗截图20181028150836.png)
+
+![](images/搜狗截图20181028150917.png)
+
+![](images/搜狗截图20181028151043.png)
+
+#### 3）Feign 声明式客户端
+
+1.依赖
+
+```gradle
+ //集成feign 客户端消费
+	compile("org.springframework.cloud:spring-cloud-starter-openfeign:${springCloudVersion}")
+```
+
+2.修改启动类注解
+
+```java
+package com.hxcoltd.weather;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.cloud.openfeign.EnableFeignClients;
+
+@SpringBootApplication
+@EnableDiscoveryClient
+@EnableFeignClients
+public class WeatherApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(WeatherApplication.class, args);
+    }
+}
+
+```
+
+3.定义一个接口，来获取数据
+
+```java
+package com.hxcoltd.weather.service;
+
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+
+/**
+ * @author yxqiang
+ * @create 2018-10-28 15:22
+ */
+
+@FeignClient("micro-weather-city-eureka")
+public interface CityClient {
+
+    @GetMapping("/cities")
+    public String CityList();
+}
+
+```
+
+4.定义个Controller来使用
+
+```java
+package com.hxcoltd.weather.controller;
+
+import com.hxcoltd.weather.service.CityClient;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * @author yxqiang
+ * @create 2018-10-28 15:25
+ */
+
+@RestController
+public class CityController {
+
+    @Autowired
+    private CityClient cityClient;
+
+    @GetMapping("/cities")
+    public String CityList(){
+        return cityClient.CityList();
+
+    }
+}
+
+```
+
+5.修改application.properties
+
+```properties
+spring.application.name: micro-weather-eureka-client-feign
+eureka.client.serviceUrl.defaultZone: http://localhost:8761/eureka/
+
+feign.client.config.feignName.connect-timeout=5000
+feign.client.config.feignName.read-timeout=5000
+
+```
+
+
+
+## 5）API网关
+
+### 1.概述
+
+集合多个api
+
+统一API入口
+
+![](images/搜狗截图20181028183103.png)
+
+**不同的API适用于不同的应用。**
+
+避免将内部信息泄露给外部
+
+为微服务添加额外的安全层（权限也会在这一层来做）
+
+支持混合通讯协议
+
+降低构建微服务的复杂性
+
+微服务模拟与虚拟化
+
+**弊端：**
+
+在架构上需要额外考虑更多的编排与管理
+
+路由逻辑配置要进行统一的管理
+
+**可能引发单点故障**
+
+### 2.常见的实现网关的方式
+
+#### **1) nginx 作为API网关**
+
+![](images/搜狗截图20181028184105.png)
+
+
+
+#### **2)Spring Cloud Zuul**
+
+提供了认证、鉴权、限流、动态路由、监控、弹性、安全、负载均衡、协助单点压测、静态响应等边缘服务的框架。
+
+#### 3）Kong提供微服务
+
+在nginx基础上实现的
+
+![](images/搜狗截图20181028184421.png)
+
+
+
+### 3.如何集成Zuul
+
+![](images/搜狗截图20181028184608.png)
+
+1.添加依赖
+
+//集成 api zuul 网关
+
+```gradle
+compile("org.springframework.cloud:spring-cloud-starter-netflix-zuul:${springCloudVersion}")
+```
+
+
+
+2.修改启动类
+
+```java
+// @EnableZuulProxy
+
+
+@SpringBootApplication
+@EnableDiscoveryClient
+@EnableZuulProxy
+public class WeatherApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(WeatherApplication.class, args);
+    }
+}
+```
+
+3.修改application.properties
+
+```properties
+spring.application.name: micro-weather-eureka-client-zuul
+eureka.client.serviceUrl.defaultZone: http://localhost:8761/eureka/
+#设置代理路径
+zuul.routes.hi.path: /hi/**
+#设置转化地址，实现反向代理的功能
+zuul.routes.hi.service-id=micro-weather-eureka-client
+```
+
+4.访问：
+
+将hello这个jar 运行在8081端口上，
+
+将hello-zuul jar 运行在8080上。
+
+http://localhost:8080/hi/hello 相当于 转发到http://localhost:8081/hello 这个请求了。
+
+
+
+5.改造以前的项目
+
+新增一个网关项目，配置如下：
+
+```properties
+spring.application.name: micro-weather-eureka-client-zuul
+eureka.client.serviceUrl.defaultZone: http://localhost:8761/eureka/
+#设置代理路径
+zuul.routes.city.path: /city/**
+#设置转化地址，实现反向代理的功能
+zuul.routes.city.service-id=micro-weather-city-eureka
+
+zuul.routes.data.path: /data/**
+zuul.routes.data.service-id=micro-weather-data-eureka
+```
+
+在网关中设置了city和data2个网关，对应各自的微服务
+
+在天气预报项目中，原来用了2个feign指向了2个微服务的地址，统一改为上面定义的api网关微服务的名字：**micro-weather-eureka-client-zuul**
+
+![](images/搜狗截图20181028193241.png)
+
+
+
+## 6）微服务的集中化配置
+
+### 1.概述
+
+**配置分类（不同的类型）**：
+
+​    源代码、文件、数据库连接、远程调用
+
+​    开发环境、测试环境、预发布环境、生产环境
+
+​    编译时、打包时、运行时
+
+​    启动加载和动态加载
+
+**配置中心要求：**    
+
+面向可配置的编码
+
+隔离性
+
+一致性（相同的环境）
+
+集中化配置
+
+**Spring Cloud Config**
+
+Config Server 端：基于git服务器来实现的，有版本的概念。
+
+Config Client 端
+
+### 2.Spring Cloud Config Server 端集成
+
+#### 1)依赖
+
+```gradle
+compile("org.springframework.cloud:spring-cloud-config-server:${springCloudVersion}")
+```
+
+#### 2)修改主程序
+
+```java
+package com.hxcoltd.weather;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.cloud.config.server.EnableConfigServer;
+
+@SpringBootApplication
+@EnableDiscoveryClient
+@EnableConfigServer //应用上 服务端配置
+public class WeatherApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(WeatherApplication.class, args);
+    }
+}
+
+```
+
+#### 3）修改application.properties配置文件
+
+```properties
+spring.application.name: micro-weather-config-server
+spring.cloud.config.server.default-application-name=config-server
+server.port= 8888
+
+eureka.client.serviceUrl.defaultZone: http://localhost:8761/eureka/
+
+
+#uri 后面的是 github的仓库地址，没有.git 后缀
+spring.cloud.config.server.git.uri=https://github.com/yangxq5858/spring-cloud-microservices-development
+#searchPaths: 表示仓库下的一级目录
+spring.cloud.config.server.git.search-paths=config-repo
+
+# 配置仓库的分支
+spring.cloud.config.label=master
+# 访问git仓库的用户名
+#spring.cloud.config.server.git.username=xxxxoooo
+# 访问git仓库的用户密码 如果Git仓库为公开仓库，可以不填写用户名和密码，如果是私有仓库需要填写
+#spring.cloud.config.server.git.password=xxxxoooo
+```
+
+
+
+### 3.Spring Cloud Client 端集成
+#### 1)依赖
+
+```gradle
+compile("org.springframework.cloud:spring-cloud-config-client:${springCloudVersion}")
+```
+
+#### 2)修改主程序
+
+只需开启Eureka 客户端注解，即@EnableDiscoveryClient 即可。无需Server端还要配置一个
+
+```java
+package com.hxcoltd.weather;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.cloud.config.server.EnableConfigServer;
+
+@SpringBootApplication
+@EnableDiscoveryClient
+public class WeatherApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(WeatherApplication.class, args);
+    }
+}
+
+```
+
+#### 3）修改application.properties配置文件
+
+```properties
+spring.application.name: micro-weather-config-client
+
+eureka.client.serviceUrl.defaultZone: http://localhost:8761/eureka/
+#表示是xxx项目的dev的配置
+spring.cloud.config.profile=dev
+spring.cloud.config.uri=http://localhost:8888
+
+
+```
+
+#### 4）配置中心文件命名规则
+
+![](images/搜狗截图20181028210408.png)
+
+注意：比如，Config-Client端的项目名为：micro-weather-config-client
+
+那么，开发环境的配置文件名就应该为micro-weather-config-client-dev.properties,否则，客户端无法解析value
+
+#### 5）客户端获取值：
+
+```java
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class WeatherApplicationTests {
+
+    @Value("${auther}") //通过这个@value注解就能获取到github中的 xxx-dev.properties 下的auther的值了
+    private String auther;
+
+    @Test
+    public void contextLoads() {
+        System.out.println(auther);
+        assertEquals("yxqiang", auther);
+    }
+
+}
+```
 
 
 
