@@ -204,7 +204,22 @@ public class WeatherController {
 
 ```
 
-## 3）service
+## 3）设置请求参数的默认值
+
+```java
+	@RequestMapping(value = {"/cityId/{cityId}", "/cityId"}, method = RequestMethod.GET)
+	public ModelAndView getReportByCityId(@PathVariable(required = false)  String cityId, Model model) throws Exception {
+		if (cityId == null) cityId = "101270101";
+		model.addAttribute("title", "老杨的天气预报");
+		model.addAttribute("cityId", cityId);
+		model.addAttribute("cityList", cityDataService.listCity());
+		model.addAttribute("report", weatherReportService.getDataByCityId(cityId));
+		return new ModelAndView("weather/report", "reportModel", model);
+	}
+```
+
+
+## 4）service
 先定义接口，在定义class，面向接口编程
 
 
