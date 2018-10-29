@@ -1781,6 +1781,299 @@ public class WeatherApplicationTests {
 }
 ```
 
+## 7）熔断机制
+
+Hystrix
+
+### 1.原理
+
+- 对该服务的调用执行熔断，对于后续请求，不再继续调用该目标服务，而是直接返回，从而可以快速释放资源
+- 保护系统
+
+### 2.实现的方式
+
+**断路器**，当请求达到阈值时，直接返回，告诉调用者，不要再重试了，不调用目标服务，进行隔离。
+
+**断路器模式：**
+
+断路器状态：打开，关闭，半打开。
+
+![](images/搜狗截图20181029195925.png)
+
+![](images/搜狗截图20181029195925.png)
+
+
+
+![](images/搜狗截图20181029200219.png)
+
+![](images/搜狗截图20181029200605.png)
+
+![](images/搜狗截图20181029201000.png)
+
+![](images/搜狗截图20181029201238.png)
+
+![](images/搜狗截图20181029201412.png)
+
+### 3.Hystrix集成
+
+#### 1）添加依赖 spring-cloud-starter-netflix-hystrix
+
+```gradle
+// 依赖关系
+dependencies {
+    compile("org.springframework.boot:spring-boot-starter-web:${springBootVersion}")
+    //集成服务发现与注册的客户端 Eureka client
+    compile("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:${springCloudVersion}")
+	
+    //集成feign 客户端消费，微服务与微服务之间的调用
+	compile("org.springframework.cloud:spring-cloud-starter-openfeign:${springCloudVersion}")
+	
+	//集成断路器
+	compile("org.springframework.cloud:spring-cloud-starter-netflix-hystrix:${springCloudVersion}")
+
+    // 该依赖用于测试阶段
+    testCompile('org.springframework.boot:spring-boot-starter-test')
+}
+```
+
+#### 2) 修改主程序
+
+添加 @EnableCircuitBreaker 注解
+
+```java
+package com.hxcoltd.weather;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.circuitbreaker.EnableCircuitBreaker;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.cloud.openfeign.EnableFeignClients;
+
+@SpringBootApplication
+@EnableDiscoveryClient
+@EnableFeignClients
+@EnableCircuitBreaker //表示启用断路器
+public class WeatherApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(WeatherApplication.class, args);
+    }
+}
+```
+
+
+
+#### 3）修改调用服务的地方
+
+在方法上，标注 @HystrixCommand，设置失败的回调方法名及回调方法的实现
+
+```java
+@RestController
+public class CityController {
+
+    @Autowired
+    private CityClient cityClient;
+
+    @GetMapping("/cities")
+    @HystrixCommand(fallbackMethod = "defaultCitys")
+    public String CityList(){
+        return cityClient.CityList();
+
+    }
+    
+    //回调方法
+    public String defaultCitys(){
+        return "City Data Service is Down!";
+    }
+}
+```
+
+
+
+CityClient 服务不用修改
+
+```java
+@Service
+@FeignClient("micro-weather-city-eureka")
+public interface CityClient {
+
+    @GetMapping("/cities")
+    public String CityList();
+}			
+```
+
+#### 4）测试
+
+将 micro-weather-city-eureka 这个微服务，断开，就会出错，就会启动断路器。
+
+
+
+#### 5）改造天气项目(在feign中启用断路器)
+
+这次，不在Controller上改造了，而是在DataClient 这个Service接口上用forgin调用其他微服务的地方来处理。
+
+**这里，就需要在application.properteis中增加一个配置**
+
+```properties
+
+#在feign中使用断路器，就需要启用
+feign.hystrix.enabled=true
+```
+
+
+
+![](images/搜狗截图20181029210003.png)
+
+```java
+@Service
+@FeignClient(name="micro-weather-eureka-client-zuul",fallback = DefaultDataClient.class)
+public interface DataClient {
+
+    /**
+     * 获取城市列表
+     * @return
+     * @throws Exception
+     */
+    @GetMapping("city/cities")
+    List<City> listCity() throws Exception;
+
+    /**
+     * 根据城市id查询天气信息
+     * @param cityId
+     * @return
+     */
+    @GetMapping("data/weather/cityId/{cityId}")
+    public WeatherResponse getDataByCityId(@PathVariable("cityId") String cityId);
+
+}
+```
+
+DefaultDataClient 类
+
+**并且，要将该类，设置为一个bean，才能被Spring所托管**
+
+```java
+@Component
+public class DefaultDataClient implements DataClient {
+    @Override
+    public List<City> listCity() throws Exception {
+        //这里模拟一个数据返回
+        List<City> cityList = null;
+        cityList = new ArrayList<>();
+
+        City city = new City();
+        city.setCityId("101270101");
+        city.setCityName("成都");
+        cityList.add(city);
+
+        city = new City();
+        city.setCityId("101270102");
+        city.setCityName("龙泉驿");
+        cityList.add(city);
+
+        return cityList;
+    }
+
+    @Override
+    public WeatherResponse getDataByCityId(String cityId) {
+        //这个对象太复杂，就直接返回null了。
+        return null;
+    }
+}
+```
+
+改造前端UI：
+
+![](images/搜狗截图20181029210936.png)
+
+
+
+## 8）自动扩展
+
+### 1.概述
+
+![](images/搜狗截图20181029214419.png)
+
+
+
+![](images/搜狗截图20181029214336.png)
+
+
+
+![](images/搜狗截图20181029214704.png)
+
+![](images/搜狗截图20181029214759.png)
+
+![](images/搜狗截图20181029215351.png)
+
+![](images/搜狗截图20181029215732.png)
+
+![](images/搜狗截图20181029215844.png)
+
+![](images/搜狗截图20181029215912.png)
+
+![](images/搜狗截图20181029220009.png)
+
+### 2.如何实现自动扩展
+
+![](images/搜狗截图20181029220359.png)
+
+![](images/搜狗截图20181029220531.png)
+
+
+
+![](images/搜狗截图20181029220619.png)
+
+![](images/搜狗截图20181029220916.png)
+
+![](images/搜狗截图20181029221005.png)
+
+![](images/搜狗截图20181029221038.png)
+
+![](images/搜狗截图20181029221100.png)
+
+![](images/搜狗截图20181029221119.png)
+
+
+
+![](images/搜狗截图20181029221148.png)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
