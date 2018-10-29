@@ -12,7 +12,19 @@ http://services.gradle.org/distributions/
 
 并把 %GRADLE_HOME%\bin 加入到path中
 
-运行 gradle -v 能正常显示版本，就设置好了
+
+
+
+
+设置Gradle的下载的Jar包路径：
+
+需要增加环境变量 GRADLE_USER_HOME。
+
+![](images/搜狗截图20181029112454.png)
+
+
+
+
 
 ## 2.利用spring initializr，选择web，选择gradle project
 
