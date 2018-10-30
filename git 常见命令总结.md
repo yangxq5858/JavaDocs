@@ -69,6 +69,7 @@ git diff
 
  
 
+
 ## git commit
 
 ​     提交已经被add进来的改动.
@@ -150,8 +151,6 @@ git diff
 
 　　git checkout (branchname)
 
- 
-
  切换到一个分支.
 ​     git checkout -b (branchname): 创建并切换到新的分支.
 ​     这个命令是将git branch newbranch和git checkout newbranch合在一起的结果.
@@ -159,6 +158,8 @@ git diff
 ​     git checkout --<filename>
 ​     此命令会使用HEAD中的最新内容替换掉你的工作目录中的文件.已添加到暂存区的改动以及新文件都不会受到影响.
 ​     注意:git checkout filename会删除该文件中所有没有暂存和提交的改动,这个操作是不可逆的.
+
+​    **git checkout . :表示删除本地所有的修改**
 
 ## git merge
 
