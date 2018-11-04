@@ -32,7 +32,7 @@ Linux下没有多个磁盘（ c:  d: 等概念），只有1个根目录。
 
 **dev**: 类似于windows的设备管理器，把所有的硬件用文件的形式存储。
 
-**etc**:所有的系统管理所需要的配置文件和子目录
+**etc**:所有的系统管理所需要的**配置文件**和子目录
 
 **home**: 存放普通用户的主目录，在linux中每个用户都有一个自己的目录，目录名是以用户的账号命名的。
 
@@ -70,7 +70,225 @@ tmp: 存放临时文件
 
 
 
-13 节。
+## JavaEE 安装
+
+xftp软件上传linux下的java安装文件，使用sftp协议，端口是22，linux必须开启sshd服务。
+
+### 1）解压：
+
+gz后缀的：tar -zxvf  xxx.gz
+
+-z: 表示压缩
+
+-x: 表示解包
+
+-c：表示打包
+
+-v：表示显示详细信息
+
+-f：表示文件名
+
+一般压缩的命令参数为：-zcvf
+
+解压的命令参数为：-zxvf
+
+### 2）配置环境变量（/etc/profile)
+
+进入/etc 目录，
+
+vim profile
+
+按G 滚动到文件末尾
+
+输入i ：进入到编辑模式
+
+JAVA_HOME=/opt/jdk1.7.0_79
+
+PATH=/opt/jdk1.7.0_79/bin:$PATH
+
+export JAVA_HOME PATH
+
+按esc 退出编辑
+
+输入：
+
+输入wq（保存并退出）
+
+
+
+**保存后，要注销，重新登录，才生效**
+
+也可以，采用下面的指令来即刻让环境生效
+
+source /etc/profile.
+
+
+
+
+
+### 3）安装tomcat
+
+#### **解压：**
+
+tar -zxvf apache-tomcat-7.0.70.tar.gz
+
+进入 tomcat目录
+
+cd /opt/apache-tomcat-7.0.70/bin
+
+#### **启动**
+
+**输入   ./startup.sh  启动，注意，一定要有 ./ 才行。**
+
+linux 中就可以访问了。windows环境还没法访问，需要设置防火墙
+
+#### **防火墙设置:**
+
+输入：service iptables status ，查看放行列表
+
+输入：vim  /etc/sysconfig/iptables
+
+```console
+# Firewall configuration written by system-config-firewall
+# Manual customization of this file is not recommended.
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 8080 -j  ACCEPT
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+
+```
+
+按下i 进入编辑模式
+
+找到22端口，按下 yy  键复制，按下 p 键粘贴，修改22 为8080
+
+按下esc 退出编辑模式，进入普通模式
+
+输入  ：（冒号）
+
+输入 wq ，回车，保存退出。
+
+**重启防火墙：**
+
+​     service iptables restart
+
+```console
+[root@centos bin]# service iptables restart
+iptables：将链设置为政策 ACCEPT：filter                    [确定]
+iptables：清除防火墙规则：                                 [确定]
+iptables：正在卸载模块：                                   [确定]
+iptables：应用防火墙规则：                                 [确定]
+
+```
+
+这时，windows就可以访问了。
+
+
+
+##常用指令
+
+###halt： 关机
+
+### **clear**：清屏幕
+
+### **pwd**: 表示显示当前路径
+
+### **ps -aux**：查看进程
+
+
+
+![](images/搜狗截图20181103154311.png)
+
+### **ps -aux | grep sshd**
+
+|表示管道， grep是查找字符串，这里表示 查询有没有 sshd的进程
+
+### **ps -ef | grep xxx**命令
+
+表示查看进程的父进程信息
+
+### **netstat -anp | more** 
+
+ 查看有哪些端口，输入q退出more的分页显示
+
+more 表示分页查看
+
+### **kill -9 103**
+
+-9：表示强制停止并杀掉，103：表示进程id
+
+**killall  xx进程名**
+
+按名称杀掉所有打开的进程。
+
+### **service 服务名 start(stop、restart)**
+
+服务的启动，停止，重启
+
+如：service iptables start（防火墙服务打开）
+
+但，这种方式，只是**临时生效**，重启服务器系统后，又回归原始状态了。
+
+### **chkconfig** --list
+
+  查看服务
+
+
+
+### **查看服务名**
+
+  方法一：在服务器上，使用setup命令-->系统服务 就可以看到，打了 * 号的表示已经启动了。
+
+  方法二：ls  /etc/init.d/ ，可以看到结果中，就是系统服务。
+
+### **服务运行级别**
+
+![](images/搜狗截图20181103170123.png)
+
+
+
+
+
+![](images/搜狗截图20181103170616.png)
+
+
+
+### **解压**
+
+tar -zxvf  xxx.tar.gz -C  指定目录
+
+### 重命名
+
+mv 原始文件名 新文件名
+
+①将一个名为abc.txt的文件[重命名](https://www.baidu.com/s?wd=%E9%87%8D%E5%91%BD%E5%90%8D&tn=SE_PcZhidaonwhc_ngpagmjz&rsv_dl=gh_pc_zhidao)为1234.txt
+
+[mv](https://www.baidu.com/s?wd=mv&tn=SE_PcZhidaonwhc_ngpagmjz&rsv_dl=gh_pc_zhidao) abc.txt 1234.txt
+
+②将目录A[重命名](https://www.baidu.com/s?wd=%E9%87%8D%E5%91%BD%E5%90%8D&tn=SE_PcZhidaonwhc_ngpagmjz&rsv_dl=gh_pc_zhidao)为B
+
+[mv](https://www.baidu.com/s?wd=mv&tn=SE_PcZhidaonwhc_ngpagmjz&rsv_dl=gh_pc_zhidao) A B
+
+③将a.txt移动到/b下，并重命名为c.txt
+
+mv a.txt /b/c.txt
+
+### JPS
+
+查看有java进程的
+
+
+
+
+
+
 
 
 
