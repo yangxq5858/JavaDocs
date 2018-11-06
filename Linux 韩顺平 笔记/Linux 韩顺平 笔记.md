@@ -236,10 +236,6 @@ more 表示分页查看
 
 但，这种方式，只是**临时生效**，重启服务器系统后，又回归原始状态了。
 
-### **chkconfig** --list
-
-  查看服务
-
 
 
 ### **查看服务名**
@@ -268,13 +264,13 @@ tar -zxvf  xxx.tar.gz -C  指定目录
 
 mv 原始文件名 新文件名
 
-①将一个名为abc.txt的文件[重命名](https://www.baidu.com/s?wd=%E9%87%8D%E5%91%BD%E5%90%8D&tn=SE_PcZhidaonwhc_ngpagmjz&rsv_dl=gh_pc_zhidao)为1234.txt
+①将一个名为abc.txt的文件重命名为1234.txt
 
-[mv](https://www.baidu.com/s?wd=mv&tn=SE_PcZhidaonwhc_ngpagmjz&rsv_dl=gh_pc_zhidao) abc.txt 1234.txt
+mv abc.txt 1234.txt
 
-②将目录A[重命名](https://www.baidu.com/s?wd=%E9%87%8D%E5%91%BD%E5%90%8D&tn=SE_PcZhidaonwhc_ngpagmjz&rsv_dl=gh_pc_zhidao)为B
+②将目录A 重命名 为B
 
-[mv](https://www.baidu.com/s?wd=mv&tn=SE_PcZhidaonwhc_ngpagmjz&rsv_dl=gh_pc_zhidao) A B
+mv A B
 
 ③将a.txt移动到/b下，并重命名为c.txt
 
@@ -283,6 +279,90 @@ mv a.txt /b/c.txt
 ### JPS
 
 查看有java进程的
+
+
+
+### chkconfig 
+
+chkconfig iptables off 关闭防火墙
+
+chkconfig xxx服务名 on/off/reset
+
+chkconfig --add xxx服务名 ：添加服务
+
+chkconfig --del xxx服务名  ：删除服务
+
+chkconfig --list xxx服务名：表示显示服务在不同的级别启动状态
+
+chkconfig --level 2345 httpd on：表示对httpd服务在级别为 2345时为打开状态。
+
+
+
+### 更改主机名
+
+**Step1：查看当前的主机名**
+
+```
+[root@sxl133 Desktop]# hostname
+sxl133
+```
+
+这里的主机名是sxl133，如果没有设置，则是localhost.localdomain，这是linux默认的主机名。
+
+ 
+
+**Step2：更新network文件**
+
+```
+[root@sxl133 Desktop]# vi /etc/sysconfig/network
+[root@sxl133 Desktop]# 
+```
+
+
+
+将HOSTNAME=localhost.localdomain改成sxl133（我们想要设置的主机名）
+
+退出编辑。
+
+ 
+
+**Step3：更新hosts文件**
+
+**输入：vi /etc/hosts**
+
+```
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+```
+
+改成
+
+```
+127.0.0.1   localhost sxl133 localhost4 localhost4.localdomain4
+::1         localhost sxl133 localhost6 localhost6.localdomain6
+```
+
+退出编辑。
+
+ 
+
+**Step4：reboot重启服务器，同时查询主机名**
+
+```
+1 [root@sxl133 Desktop]#  reboot
+2 [root@sxl133 Desktop]#  hostname
+```
+
+### scp命令（跨机器复制）
+
+scp -r local_file remote_username@remote_ip:remote_folder
+
+-r：表示递归复制
+
+
+
+
+
 
 
 
