@@ -864,3 +864,9 @@ Object.keys(myObject).forEach(function(key,index){　
     　console.log(key,myObject[key])
 })
 ```
+### 22.指数运算符
+
+```
+1. 指数运算符(幂): **
+2. Array.prototype.includes(value) : 判断数组中是否包含指定value
+```
