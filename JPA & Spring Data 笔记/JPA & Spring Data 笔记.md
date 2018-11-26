@@ -65,6 +65,13 @@ Jpa的主要技术
             <artifactId>hibernate-entitymanager</artifactId>
             <version>4.2.14.Final</version>
         </dependency>
+      
+      <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 
