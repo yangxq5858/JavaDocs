@@ -591,9 +591,11 @@ const createStore = (reducer)=>{
         state = reducer(state,action); //这里将新的state赋值给内部的state
 
         //当状态更新后，监听数组中（即订阅者，执行各自的订阅方法）
-        listeners.forEach((listener)=>listener());
+        listeners.forEach(l=>l());
     }
-
+    //默认先过滤一次监听器
+    dispatch();
+  
     //返回值，可以返回一个箭头函数，其实也是一个对象
     return {
         getState,
