@@ -800,6 +800,263 @@ const reducer = (state = {number: 0}, action) => {
 export default reducer;
 ```
 
+## 8 手写middleWare（redux中原生有实现)
+
+
+
+**中间件的三个参数**，为后面的代码理解有好处
+
+第一个参数为：store
+
+第二个参数为：dispatch
+
+第三个参数为：action
+
+
+
+```js
+/**
+ *
+ * logger 的定义， 第一个参数为老的store，第二个参数为store.dispatch
+ * let logger = store => next => action =>{
+ * }
+ *
+ *applyMiddleware的应用
+ * let store = applyMiddleware(logger)(store.createStore)(reducer);
+ * @param middleWare
+ * @returns {function(*): function(*=): {dispatch: *}}
+ */
+//应用中间件 对store 增强，返回一个对 dispath 增强的 store
+let applyMiddleware = (logger) => {
+    return (createStore) => (reducer) => {
+        let store = createStore(reducer);
+        let dispatchFunc = logger(store); //返回是nextFunc，nextFunc = (next 或叫 dispatch) => action => {}
+        let dispatch = dispatchFunc(store.dispatch);//将store老的dispatch方法传入，替换掉store中的dispath
+
+        //返回一个新的store，并把store中原来有的getState，subscribe 返回，并返回一个新的dispatch，这个行的dispath，就是上面的 dispatchFunc（即日志中间件的最后实现的方法体）
+        return {
+            ...store,dispatch //表示把新的dispatch，覆盖老的store的dispatch方法
+        }
+    }
+}
+
+```
+
+index.js
+
+```js
+import {createStore,applyMiddleware} from "redux";
+import reducer from './reducers/counter-reducer'
+import {INC} from './actions'
+
+//这里定义的一个中间件logger
+let logger = store => next => action =>{
+    console.log('befoe',store.getState().number);
+    next(action);
+    console.log('after',store.getState().number);
+}
+//返回一个带有logger的中间件增强dispatch方法的store了
+let store = applyMiddleware(logger)(createStore)(reducer);
+// let store = createStore(reducer);
+
+store.dispatch({type:INC,amount:1});
+```
+
+## 9.手写 thunk 实现异步
+
+```js
+let thunk = store => next => action =>{
+    //判断action是否为一个函数，如果为函数，则将next 传入到action 中去执行，这个next 就是 下面调用的dispatch
+    if (typeof action === 'function'){
+        action(next);
+    }else{
+        next(action);
+    }
+
+}
+
+//后面2个参数，是固定写法了，只有第一个参数，才是中间件方法本身。
+let store = applyMiddleware(thunk)(createStore)(reducer);
+store.subscribe(()=>{
+    console.log(store.getState().number);
+})
+
+store.dispatch(function(dispatch){
+    // setTimeout(function () {
+    //     dispatch({type:INC,amount:3})
+    // },3000)
+
+    //上面的代码等同于
+    setTimeout( () => dispatch({type:INC,amount:3}) ,3000)
+
+});
+```
+
+## 10.手写promise异步
+
+```js
+let isPromise = obj => obj.then; //表示只要有then方法，表示是promise
+let promiseMiddleWare = store => next => action =>{
+    //判断action是Promise方法
+    if (isPromise(action)){
+        action.then((data)=>next(data));
+    }else{
+        next(action);
+    }
+
+}
+
+
+
+
+//后面2个参数，是固定写法了，只有第一个参数，才是中间件方法本身。
+let store = applyMiddleware(promiseMiddleWare)(createStore)(reducer);
+store.subscribe(()=>{
+    console.log(store.getState().number);
+})
+
+/*store.dispatch(function(dispatch){
+    // setTimeout(function () {
+    //     dispatch({type:INC,amount:3})
+    // },3000)
+
+    //上面的代码等同于
+    setTimeout( () => dispatch({type:INC,amount:3}) ,3000)
+
+});*/
+
+store.dispatch(new Promise(function(reslove,reject){
+    setTimeout(function () {
+        reslove({type:INC,amount:3})
+    },3000)
+}))
+
+```
+
+
+
+## 11.应用多个中间件
+
+```js
+let applyMiddleware = (...logs) => {
+    return (createStore) => (reducer) => {
+        let store = createStore(reducer);
+        logs.map(l=>l(store));
+
+        let dispatch = compose(...logs,store.dispatch);
+
+        return {
+            ...store,dispatch //表示把新的dispatch，覆盖老的store的dispatch方法
+        }
+    }
+}
+```
+
+
+
+## 12.react的默认属性
+
+```js
+import React,{Component} from 'react';
+import {render} from 'react-dom';
+
+class Clock extends Component{
+
+    static defaultProps = {
+        name: '默认名'
+    }
+
+
+    render(){
+        return (
+            <div>
+                {this.props.name}
+            </div>
+        )
+    }
+}
+
+render(<Clock name='yxq' />,document.getElementById('root'));
+```
+
+当 name 不传递的时候，读取默认的props的值，这个**defaultProps** 是默认的名称
+
+
+
+## 13.react 中的 this
+
+react中的this 是指组件实例，而不是react元素本身，如下
+
+```js
+import React,{Component} from 'react';
+import {render} from 'react-dom';
+
+class Clock extends Component{
+
+
+    handleChange = () =>{
+        debugger;
+
+        let a = parseInt(this.a.value) || 0;
+        let b = parseInt(this.b.value) || 0;
+        this.c.value = a + b;
+
+        console.log(this.refs.test.value); //直接获取ref的值
+
+        console.log(this);
+    }
+
+
+
+    render(){
+
+        //ref={ref=>this.a=ref} 表示在Clock类中声明了一个a属性，并赋值为当前的input
+        return (
+            <div onChange={this.handleChange}>
+                <input type='test' ref={ref=>this.a=ref} /> +
+                <input type='test' ref={ref=>this.b=ref}/> =
+                <input type='test' ref={ref=>this.c=ref}/>
+                //这个表示 给 组件类的refs 添加了一个属性为test
+                <input type='test' ref="test"/>
+
+            </div>
+        )
+    }
+
+
+
+}
+
+render(<Clock name='yxq' />,document.getElementById('root'));
+```
+
+
+
+
+
+还要学习珠峰的第三章。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
